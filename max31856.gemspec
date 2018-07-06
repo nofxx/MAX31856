@@ -4,7 +4,7 @@ require 'max31856/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'max31856'
-  spec.version       = Max31856::VERSION
+  spec.version       = MAX31856::VERSION
   spec.authors       = ['Marcos Piccinini']
   spec.email         = ['x@nofxx.com']
 
@@ -12,15 +12,6 @@ Gem::Specification.new do |spec|
   spec.description   = %q{TODO: Write a longer description or delete this line.}
   spec.homepage      = 'https://github.com/nofxx/max31856'
   spec.license       = 'MIT'
-
-  # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
-  # to allow pushing to a single host or delete this section to allow pushing to any host.
-  if spec.respond_to?(:metadata)
-    spec.metadata['allowed_push_host'] = 'TODO: Set to 'http://mygemserver.com''
-  else
-    raise 'RubyGems 2.0 or newer is required to protect against ' \
-      'public gem pushes.'
-  end
 
   spec.files         = `git ls-files -z`.split('\x0').reject do |f|
     f.match(%r{^(test|spec|features)/})

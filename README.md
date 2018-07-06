@@ -1,4 +1,4 @@
-# Max31856
+# MAX31856
 
 Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/max31856`. To experiment with that code, run `bin/console` for an interactive prompt.
 
@@ -22,7 +22,9 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+    m = MAX31856.new(chip = 0, clock = 2_000_000)
+    m.config
+    m.read
 
 ## Development
 
