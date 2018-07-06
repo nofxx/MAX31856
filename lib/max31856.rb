@@ -152,19 +152,3 @@ class MAX31856
     end
   end
 end
-
-
-# def print_c(label, temp)
-#   "🌡 #{label.to_s.upcase}: #{format('%.2f', temp)} ℃"
-# end
-
-# m = MAX31856.new # :k
-# # m.read_fault
-# m.config
-# loop do
-#   tc, cj = m.read
-#   print print_c :cj, cj
-#   print '  '
-#   puts print_c :tc, tc
-#   sleep 0.8
-# end
