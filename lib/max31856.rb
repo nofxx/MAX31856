@@ -5,7 +5,7 @@ require 'pi_piper'
 # MAX31856
 #
 class MAX31856
-  attr_accessor :chip, :type # s, :miso, :mosi, :clk
+  attr_accessor :chip, :type, :clock
 
   # Thermocouple Temperature Data Resolution
   TC_RES = 0.0078125
@@ -28,7 +28,7 @@ class MAX31856
   # bit 1: fault status clear                      -> 1 (clear any fault)
   # bit 0: 50/60 Hz filter select                  -> 0 (60Hz)
   #
-  REG_01 = [0x00, 0b01000010].freeze
+  REG_1 = [0x00, 0b01000010].freeze
 
   #
   # Config Register 2
@@ -42,7 +42,7 @@ class MAX31856
   # bit 1: Thermocouple Type -> K Type (default)   -> 1 (default)
   # bit 0: Thermocouple Type -> K Type (default)   -> 1 (default)
   #
-  REG_02 = [0x01, 0b01000010].freeze
+  REG_2 = 0x01
 
   TYPES = {
     b: 0x00,
@@ -60,6 +60,17 @@ class MAX31856
     1 => PiPiper::Spi::CHIP_SELECT_1,
     2 => PiPiper::Spi::CHIP_SELECT_BOTH,
     3 => PiPiper::Spi::CHIP_SELECT_NONE
+  }.freeze
+
+  FAULTS = {
+    0x80 => 'Cold Junction Out-of-Range',
+    0x40 => 'Thermocouple Out-of-Range',
+    0x20 => 'Cold-Junction High Fault',
+    0x10 => 'Cold-Junction Low Fault',
+    0x08 => 'Thermocouple Temperature High Fault',
+    0x04 => 'Thermocouple Temperature Low Fault',
+    0x02 => 'Overvoltage or Undervoltage Input Fault',
+    0x01 => 'Thermocouple Open-Circuit Fault'
   }.freeze
 
   def initialize(type = :k, chip = 0, clock = 2_000_000)
@@ -80,7 +91,7 @@ class MAX31856
       spi.bit_order PiPiper::Spi::MSBFIRST
 
       # Set the clock divider to get a clock speed of 2MHz
-      spi.clock @clock
+      spi.clock clock
 
       spi.chip_select(chip) do
         yield spi
@@ -89,46 +100,48 @@ class MAX31856
   end
 
   def config
-    PiPiper::Spi.begin do |spi|
-      # Set cpol, cpha
-      PiPiper::Spi.set_mode(0, 1)
-
-      # Setup the chip select behavior
-      spi.chip_select_active_low(true)
-
-      # Set the bit order to MSB
-      spi.bit_order PiPiper::Spi::MSBFIRST
-
-      # Set the clock divider to get a clock speed of 2MHz
-      spi.clock @clock
-
-      sleep 0.5 # give it 500ms for conversion
-
-      # write config Register 0
-      # spi.chip_select(chip) do
-      # p 'Conv ' + spi.write(REG_01).inspect
-      # # sleep 0.2
-      # p "Thermo #{type}-> " + spi.write(REG_02).inspect
-      # sleep 0.2
-      # end
-
-      loop do
-        tc = cj = 0
-        spi.chip_select(chip) do
-          # spi.write(0, 0x42)
-          # conversion time is less than 150ms
-          sleep(0.2) # give it 200ms for conversion
-
-          cj = read_cj(spi.write(Array.new(4, 0xff).unshift(REG_CJ)))
-          sleep 0.2
-          tc = read_tc(spi.write(Array.new(4, 0xff).unshift(REG_TC)))
-        end
-        puts print_c :tc, tc
-        puts print_c :cj, cj
-        sleep 0.8
-        puts '-' * 35
-      end
+    spi_work do |spi|
+      spi.write(REG_2, type)
+      spi.write(REG_1)
     end
+    sleep(0.2) # give it 200ms for conversion
+  end
+
+  def read
+    tc = cj = 0
+    spi_work do |spi|
+      cj = read_cj(spi.write(Array.new(4, 0xff).unshift(REG_CJ)))
+      sleep 0.2
+      tc = read_tc(spi.write(Array.new(4, 0xff).unshift(REG_TC)))
+    end
+    [tc, cj]
+  end
+
+  def read_cj(raw)
+    lb, mb, _offset = raw.reverse # Offset already on sum
+    # MSB << 8 | LSB and remove last 2
+    temp = ((mb << 8) | lb) >> 2
+
+    # Handle negative
+    temp -= 0x4000 unless (mb & 0x80).zero?
+
+    # Convert to Celsius
+    temp * CJ_RES
+  end
+
+  def read_tc(raw)
+    fault, lb, mb, hb = raw.reverse
+    FAULTS.each do |f, txt|
+      raise txt if fault & f == 1
+    end
+    # MSB << 8 | LSB and remove last 5
+    temp = ((hb << 16) | (mb << 8) | lb) >> 5
+
+    # Handle negative
+    temp -= 0x80000 unless (hb & 0x80).zero?
+
+    # Convert to Celsius
+    temp * TC_RES
   end
 
   # Read register faults
@@ -138,36 +151,20 @@ class MAX31856
       p [fault, fault.last.to_s(2).rjust(8, '0')]
     end
   end
-
-  def read_cj(raw)
-    p raw
-    _, lsb, msb, offset = raw.reverse
-    # MSB << 8 | LSB and remove last 2
-    temp = ((msb << 8) | lsb) >> 2
-    temp = offset + temp
-    # Handle negative
-    temp -= 0x4000 unless (msb & 0x80).zero?
-    # Convert to Celsius
-    temp * CJ_RES
-  end
-
-  def read_tc(raw)
-    _fault, lb, mb, hb = raw.reverse
-    temp = ((hb << 16) | (mb << 8) | lb) >> 5
-
-    temp -= 0x80000 unless (hb & 0x80).zero?
-
-    # Convert to Celsius
-    temp * TC_RES
-  end
-
-  def print_c(label, temp)
-    "🌡 #{label}: #{format('%.2f', temp)}℃"
-  end
-
-  def read_all
-    config
-    # PiPiper::Spi.begin(chip) do |spi|
-    # end
-  end
 end
+
+
+# def print_c(label, temp)
+#   "🌡 #{label.to_s.upcase}: #{format('%.2f', temp)} ℃"
+# end
+
+# m = MAX31856.new # :k
+# # m.read_fault
+# m.config
+# loop do
+#   tc, cj = m.read
+#   print print_c :cj, cj
+#   print '  '
+#   puts print_c :tc, tc
+#   sleep 0.8
+# end
