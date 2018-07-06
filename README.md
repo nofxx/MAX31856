@@ -23,7 +23,7 @@ Or install it yourself as:
 
 ## Usage
 
-    m = MAX31856.new(chip = 0, clock = 2_000_000)
+    m = MAX31856.new(chip = 0, type = :k, clock = 2_000_000)
     m.config
     m.read # [Cold Junction Temp, Thermocouple Temp] floats in celsius
 

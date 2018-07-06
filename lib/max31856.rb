@@ -73,7 +73,7 @@ class MAX31856
     0x01 => 'Thermocouple Open-Circuit Fault'
   }.freeze
 
-  def initialize(type = :k, chip = 0, clock = 2_000_000)
+  def initialize(chip = 0, type = :k, clock = 2_000_000)
     @type = TYPES[type]
     @chip = CHIPS[chip]
     @clock = clock
