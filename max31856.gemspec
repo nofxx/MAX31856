@@ -8,12 +8,12 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Marcos Piccinini']
   spec.email         = ['x@nofxx.com']
 
-  spec.summary       = %q{TODO: Write a short summary, because RubyGems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
+  spec.summary       = %q{Read temperatures from MAX31856 Thermocouple.}
+  spec.description   = %q{PiPiper based wrapper for MAX31856 SPI Interface.}
   spec.homepage      = 'https://github.com/nofxx/max31856'
   spec.license       = 'MIT'
 
-  spec.files         = `git ls-files -z`.split('\x0').reject do |f|
+  spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
   end
   spec.bindir        = 'exe'
