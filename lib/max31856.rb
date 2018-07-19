@@ -82,18 +82,12 @@ class MAX31856
     @clock = clock
   end
 
+  # Set SPI stuff and yield block
   def spi_work
     PiPiper::Spi.begin do |spi|
-      # Set cpol, cpha
       PiPiper::Spi.set_mode(0, 1)
-
-      # Setup the chip select behavior
       spi.chip_select_active_low(true)
-
-      # Set the bit order to MSB
       spi.bit_order PiPiper::Spi::MSBFIRST
-
-      # Set the clock divider to get a clock speed of 2MHz
       spi.clock clock
 
       spi.chip_select(chip) do
@@ -122,6 +116,8 @@ class MAX31856
     end
     [tc, cj]
   end
+
+  private
 
   def read_cj(raw)
     lb, mb, _offset = raw.reverse # Offset already on sum
