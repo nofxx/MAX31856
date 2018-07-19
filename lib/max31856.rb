@@ -12,10 +12,12 @@ class MAX31856
   # Cold-Junction Temperature Data Resolution
   CJ_RES = 0.015625
 
-  REG_CJ = 0x08 # Fault status register
-  REG_TC = 0x0c # Fault status register
+  # Read registers
+  REG_CJ    = 0x08 # Cold Junction status register
+  REG_TC    = 0x0c # Thermocouple status register
   REG_FAULT = 0x0F # Fault status register
 
+  # Write registers
   #
   # Config Register 1
   # ------------------
@@ -28,7 +30,8 @@ class MAX31856
   # bit 1: fault status clear                      -> 1 (clear any fault)
   # bit 0: 50/60 Hz filter select                  -> 0 (60Hz)
   #
-  REG_1 = [0x00, 0b01000010].freeze
+  REG_1 = 0x00
+  CFG_1 = 0b01000010
 
   #
   # Config Register 2
@@ -99,14 +102,17 @@ class MAX31856
     end
   end
 
+  # Set register configs
   def config
     spi_work do |spi|
-      spi.write(REG_2, type)
-      spi.write(REG_1)
+      # 0x80 to write
+      spi.write(0x80 | REG_1, CFG_1)
+      spi.write(0x80 | REG_2, type)
     end
     sleep(0.2) # give it 200ms for conversion
   end
 
+  # Read cj and tc
   def read
     tc = cj = 0
     spi_work do |spi|
