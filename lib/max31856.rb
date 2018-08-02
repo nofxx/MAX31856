@@ -30,8 +30,7 @@ class MAX31856
   # bit 1: fault status clear                      -> 1 (clear any fault)
   # bit 0: 50/60 Hz filter select                  -> 0 (60Hz)
   #
-  REG_1 = 0x00
-  CFG_1 = 0b01000010
+  REG_1 = [0x00, 0b10010010].freeze
 
   #
   # Config Register 2
@@ -76,18 +75,24 @@ class MAX31856
     0x01 => 'Thermocouple Open-Circuit Fault'
   }.freeze
 
-  def initialize(chip = 0, type = :k, clock = 2_000_000)
+  def initialize(type = :k, chip = 0, clock = 2_000_000)
     @type = TYPES[type]
     @chip = CHIPS[chip]
     @clock = clock
   end
 
-  # Set SPI stuff and yield block
   def spi_work
     PiPiper::Spi.begin do |spi|
+      # Set cpol, cpha
       PiPiper::Spi.set_mode(0, 1)
+
+      # Setup the chip select behavior
       spi.chip_select_active_low(true)
+
+      # Set the bit order to MSB
       spi.bit_order PiPiper::Spi::MSBFIRST
+
+      # Set the clock divider to get a clock speed of 2MHz
       spi.clock clock
 
       spi.chip_select(chip) do
@@ -96,17 +101,34 @@ class MAX31856
     end
   end
 
-  # Set register configs
-  def config
+  #
+  # Run once config
+  #
+  # CR1_AVERAGE_1_SAMPLE                    0x00
+  # CR1_AVERAGE_2_SAMPLES                   0x10
+  # CR1_AVERAGE_4_SAMPLES                   0x20
+  # CR1_AVERAGE_8_SAMPLES                   0x30
+  # CR1_AVERAGE_16_SAMPLES                  0x40
+  #
+  # Optionally set samples
+  def config(samples = 0x10)
     spi_work do |spi|
-      # 0x80 to write
-      spi.write(0x80 | REG_1, CFG_1)
-      spi.write(0x80 | REG_2, type)
+      sleep(0.3)
+      spi.write(write_reg(REG_1))
+      spi.write(write_reg(REG_2, (samples | type)))
     end
     sleep(0.2) # give it 200ms for conversion
   end
 
-  # Read cj and tc
+  # Set 0x80 for write
+  def write_reg(ary)
+    ary[0] = ary[0] | 0x80
+    ary
+  end
+
+  #
+  # Read both
+  #
   def read
     tc = cj = 0
     spi_work do |spi|
@@ -117,8 +139,9 @@ class MAX31856
     [tc, cj]
   end
 
-  private
-
+  #
+  # Read cold-junction
+  #
   def read_cj(raw)
     lb, mb, _offset = raw.reverse # Offset already on sum
     # MSB << 8 | LSB and remove last 2
@@ -131,6 +154,9 @@ class MAX31856
     temp * CJ_RES
   end
 
+  #
+  # Read thermocouple
+  #
   def read_tc(raw)
     fault, lb, mb, hb = raw.reverse
     FAULTS.each do |f, txt|
