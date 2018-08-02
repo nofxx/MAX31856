@@ -45,6 +45,20 @@ class MAX31856
   #
   REG_2 = 0x01
 
+  #
+  # Config Register 2
+  # ------------------
+  # bit 7: Nil
+  # bit 6: Nil
+  # bit 5: Cold-Junction High Fault Threshold              -> 0 (default)
+  # bit 4: Cold-Junction Low Fault Threshold               -> 0 (default)
+  # bit 3: Thermocouple Temperature High Fault Threshold   -> 0 (default)
+  # bit 2: Thermocouple Temperature Low Fault Threshold    -> 0 (default)
+  # bit 1: Over-voltage or Undervoltage Input Fault        -> 1 (default)
+  # bit 0: Thermocouple Open-Circuit Fault                 -> 1 (default)
+  #
+  REG_3 = [0x02, 0b11111100].freeze
+
   TYPES = {
     b: 0x00,
     e: 0x01,
@@ -109,20 +123,22 @@ class MAX31856
   # CR1_AVERAGE_8_SAMPLES                   0x30
   # CR1_AVERAGE_16_SAMPLES                  0x40
   #
+  # define CR1_VOLTAGE_MODE_GAIN_8                 0x08
+  # define CR1_VOLTAGE_MODE_GAIN_32                0x0C
+  #
   # Optionally set samples
   def config(samples = 0x10)
     spi_work do |spi|
-      sleep(0.3)
       spi.write(write_reg(REG_1))
-      spi.write(write_reg(REG_2, (samples | type)))
+      spi.write(write_reg([REG_2, (samples | type)]))
+      spi.write(write_reg(REG_3))
     end
-    sleep(0.2) # give it 200ms for conversion
+    sleep 0.2 # give it 200ms for conversion
   end
 
-  # Set 0x80 for write
+  # Set 0x80 on first for writes
   def write_reg(ary)
-    ary[0] = ary[0] | 0x80
-    ary
+    ary[1..-1].unshift(ary[0] | 0x80)
   end
 
   #
