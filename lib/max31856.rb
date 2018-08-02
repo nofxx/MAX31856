@@ -17,15 +17,14 @@ class MAX31856
   REG_TC    = 0x0c # Thermocouple status register
   REG_FAULT = 0x0F # Fault status register
 
-  # Write registers
   #
   # Config Register 1
   # ------------------
-  # bit 7: Conversion Mode                         -> 0 (Normally Off Mode)
-  # bit 6: 1-shot                                  -> 1 (ON)
+  # bit 7: Conversion Mode                         -> 1 (Normally Off Mode)
+  # bit 6: 1-shot                                  -> 0 (off)
   # bit 5: open-circuit fault detection            -> 0 (off)
-  # bit 4: open-circuit fault detection            -> 0 (off)
-  # bit 3: Cold-junction temerature sensor enabled -> 0 (default)
+  # bit 4: open-circuit fault detection type k     -> 1 (on)
+  # bit 3: Cold-junction sensor disabled           -> 0 (default)
   # bit 2: Fault Mode                              -> 0 (default)
   # bit 1: fault status clear                      -> 1 (clear any fault)
   # bit 0: 50/60 Hz filter select                  -> 0 (60Hz)
