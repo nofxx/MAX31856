@@ -2,7 +2,7 @@
 
 MAX31856 - Precision Thermocouple to Digital Converter with Linearization
 
-SPI interface using PiPiper
+Ruby SPI interface using PiPiper
 
 
 ## Installation
@@ -21,11 +21,22 @@ Or install it yourself as:
 
     $ gem install max31856
 
+
 ## Usage
 
     m = MAX31856.new(chip = 0, type = :k, clock = 2_000_000)
-    m.config
-    m.read # [Cold Junction Temp, Thermocouple Temp] floats in celsius
+
+    m.config # Must be run once (shutdown resets chip)
+
+    m.read   # [Cold Junction Temp, Thermocouple Temp] Floats in celsius
+
+
+## Raspberry v3
+
+To enable SPI on the Rpi, on `/boot/config.txt`:
+
+    dtparam=spi=on
+
 
 ## Development
 
