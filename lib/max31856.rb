@@ -136,7 +136,7 @@ class MAX31856
     sleep 0.2 # give it 200ms for conversion
   end
 
-  # Set 0x80 on first for writes
+  # Sum 0x80 (MSB) on reg key for writes
   def write_reg(ary)
     ary[1..-1].unshift(ary[0] | 0x80)
   end

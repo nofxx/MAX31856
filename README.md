@@ -60,6 +60,9 @@ and contributors are expected to adhere to the [Contributor Covenant](http://con
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 
-## Code of Conduct
 
-Everyone interacting in the MAX31856 project’s codebases and issue trackers is expected to follow the [code of conduct](https://github.com/nofxx/max31856/blob/master/CODE_OF_CONDUCT.md).
+## Notes
+
+For RTD -> PT100/PT1000, check out:
+
+https://github.com/nofxx/MAX31865
